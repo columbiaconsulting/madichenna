@@ -1,0 +1,378 @@
+/* ============================================================
+   Golf Ball Tracer — Mobile-first stylesheet
+   ============================================================ */
+
+:root {
+    --green: #1a472a;
+    --light-green: #2d6a4f;
+    --accent: #52b788;
+    --accent-dark: #3a9a6e;
+    --white: #f8f9fa;
+    --text-muted: #a8c5b5;
+    --card-bg: rgba(255, 255, 255, 0.06);
+    --card-border: rgba(82, 183, 136, 0.25);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --radius: 16px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ---- Reset & Base ----------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    background-color: var(--green);
+    background-image:
+        radial-gradient(ellipse at top, #2d6a4f 0%, #1a472a 60%, #0f2d1a 100%);
+    background-attachment: fixed;
+    color: var(--white);
+    font-family: var(--font);
+    min-height: 100vh;
+    line-height: 1.5;
+}
+
+/* ---- Header ----------------------------------------------- */
+.app-header {
+    background: linear-gradient(135deg, #0f2d1a 0%, #1a472a 50%, #2d6a4f 100%);
+    border-bottom: 1px solid var(--card-border);
+    padding: 24px 20px 20px;
+    text-align: center;
+}
+
+.app-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--white);
+}
+
+.app-subtitle {
+    font-size: 0.875rem;
+    color: var(--accent);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+}
+
+/* ---- Main -------------------------------------------------- */
+.app-main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+}
+
+/* ---- State Sections --------------------------------------- */
+.state-section {
+    display: none;
+}
+
+.state-section.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Upload Card ------------------------------------------ */
+.upload-card {
+    position: relative;
+    background: var(--card-bg);
+    border: 2px dashed var(--card-border);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+    margin-bottom: 16px;
+}
+
+.upload-card:hover,
+.upload-card:focus-within {
+    border-color: var(--accent);
+    background: rgba(82, 183, 136, 0.1);
+}
+
+.upload-card:active {
+    transform: scale(0.98);
+}
+
+/* Hidden file input covers the entire card */
+#video-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.upload-icon {
+    font-size: 3.5rem;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.upload-headline {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 6px;
+}
+
+.upload-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.upload-filename {
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 600;
+    word-break: break-all;
+    max-width: 280px;
+}
+
+/* ---- Buttons ---------------------------------------------- */
+.btn {
+    display: block;
+    width: 100%;
+    padding: 16px 24px;
+    border: none;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: var(--font);
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: background 0.2s, transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+    margin-top: 12px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(82, 183, 136, 0.35);
+}
+
+.btn-primary:hover:not(:disabled) {
+    box-shadow: 0 6px 24px rgba(82, 183, 136, 0.5);
+    background: linear-gradient(135deg, #62c798 0%, var(--accent) 100%);
+}
+
+.btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+}
+
+.btn-secondary:hover {
+    background: rgba(82, 183, 136, 0.12);
+}
+
+/* ---- Error message ---------------------------------------- */
+.error-message {
+    color: #ff7675;
+    font-size: 0.875rem;
+    text-align: center;
+    margin-top: 12px;
+    min-height: 1.2em;
+}
+
+/* ---- Processing Card -------------------------------------- */
+.processing-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 40px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+/* Spinning ball animation */
+.ball-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 72px;
+    margin-bottom: 20px;
+}
+
+.ball-dot {
+    width: 40px;
+    height: 40px;
+    background: radial-gradient(circle at 35% 35%, #fff, var(--accent), var(--accent-dark));
+    border-radius: 50%;
+    animation: ballBounce 1.2s ease-in-out infinite alternate;
+    box-shadow: 0 0 20px rgba(82, 183, 136, 0.6);
+}
+
+@keyframes ballBounce {
+    from { transform: translateY(-12px) scale(1.05); }
+    to   { transform: translateY(12px) scale(0.95); }
+}
+
+.processing-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.processing-status {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    min-height: 1.2em;
+}
+
+/* ---- Progress Bar ----------------------------------------- */
+.progress-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--light-green), var(--accent), #74c69d);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.35) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(200%); }
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* ---- Result Card ------------------------------------------ */
+.result-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.result-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 16px;
+    color: var(--accent);
+}
+
+/* ---- Video Player ----------------------------------------- */
+.video-player {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 12px;
+    background: #000;
+    display: block;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Stats Grid ------------------------------------------- */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
+    display: block;
+}
+
+.stat-label {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-top: 2px;
+    display: block;
+}
+
+/* ---- Responsive ------------------------------------------- */
+@media (min-width: 600px) {
+    .app-title {
+        font-size: 2.25rem;
+    }
+
+    .app-main {
+        padding: 32px 24px 60px;
+    }
+
+    .upload-card {
+        padding: 56px 32px;
+    }
+
+    .processing-card,
+    .result-card {
+        padding: 40px 36px;
+    }
+}

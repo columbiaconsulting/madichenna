@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a472a">
+    <title>Golf Ball Tracer</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="app-header">
+        <h1 class="app-title">Golf Ball Tracer</h1>
+        <p class="app-subtitle">Track every shot with precision</p>
+    </header>
+
+    <main class="app-main">
+
+        <!-- Upload State -->
+        <section id="state-upload" class="state-section active">
+            <div class="upload-card" id="upload-card">
+                <div class="upload-icon">⛳</div>
+                <p class="upload-headline">Tap to select your golf video</p>
+                <p class="upload-hint">MP4, MOV, AVI — up to 500 MB</p>
+                <p class="upload-filename" id="upload-filename"></p>
+                <input type="file" id="video-input" accept="video/*" aria-label="Select golf video">
+            </div>
+            <button class="btn btn-primary" id="process-btn" disabled>
+                Trace Ball Flight
+            </button>
+            <p class="error-message" id="upload-error"></p>
+        </section>
+
+        <!-- Processing State -->
+        <section id="state-processing" class="state-section">
+            <div class="processing-card">
+                <div class="ball-spinner">
+                    <div class="ball-dot"></div>
+                </div>
+                <h2 class="processing-title">Analyzing Your Shot</h2>
+                <p class="processing-status" id="processing-status">Uploading video...</p>
+                <div class="progress-track">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <p class="progress-text" id="progress-text">0%</p>
+            </div>
+        </section>
+
+        <!-- Result State -->
+        <section id="state-result" class="state-section">
+            <div class="result-card">
+                <h2 class="result-title">Shot Traced!</h2>
+                <video
+                    id="result-video"
+                    class="video-player"
+                    controls
+                    autoplay
+                    playsinline
+                    loop
+                    preload="metadata"
+                >
+                    Your browser does not support HTML5 video.
+                </video>
+                <div class="stats-grid" id="stats-grid">
+                    <!-- Populated by JS -->
+                </div>
+                <button class="btn btn-primary" id="download-btn">
+                    Download Video
+                </button>
+                <button class="btn btn-secondary" id="retry-btn">
+                    Trace Another
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
