@@ -5,6 +5,46 @@ Golf ball detection and trajectory tracking using OpenCV.
 import cv2
 import numpy as np
 import math
+import os
+import shutil
+import subprocess
+import tempfile
+
+
+def _open_writer(path, fps, width, height):
+    """Write frames with mp4v — reliable on all platforms, no DLL needed."""
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
+    if not writer.isOpened():
+        raise RuntimeError("Could not open VideoWriter — check OpenCV installation")
+    return writer
+
+
+def _finalize_video(tmp_path, final_path):
+    """
+    Re-encode tmp_path to H.264 at final_path using ffmpeg when available
+    (gives better browser compatibility). Falls back to the mp4v file directly.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg:
+        try:
+            r = subprocess.run(
+                [
+                    ffmpeg, "-y", "-i", tmp_path,
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                    "-movflags", "+faststart",
+                    final_path,
+                ],
+                capture_output=True,
+                timeout=600,
+            )
+            if r.returncode == 0:
+                os.remove(tmp_path)
+                return
+        except Exception:
+            pass
+    # ffmpeg not available or failed — use the mp4v file as-is
+    os.replace(tmp_path, final_path)
 
 
 def detect_ball_in_frame(frame, bg_sub, history):
@@ -364,16 +404,8 @@ def process_video(input_path, output_path, progress_callback=None):
     if not cap2.isOpened():
         raise RuntimeError(f"Cannot re-open video: {input_path}")
 
-    # Try H.264 first, fall back to mp4v
-    fourcc = cv2.VideoWriter_fourcc(*"avc1")
-    out = cv2.VideoWriter(output_path, fourcc, fps, (orig_width, orig_height))
-    if not out.isOpened():
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(output_path, fourcc, fps, (orig_width, orig_height))
-
-    if not out.isOpened():
-        cap2.release()
-        raise RuntimeError("Could not open VideoWriter for output")
+    tmp_path = output_path + ".tmp.mp4"
+    out = _open_writer(tmp_path, fps, orig_width, orig_height)
 
     frame_idx = 0
     while True:
@@ -393,6 +425,7 @@ def process_video(input_path, output_path, progress_callback=None):
 
     cap2.release()
     out.release()
+    _finalize_video(tmp_path, output_path)
 
     if progress_callback:
         progress_callback(1.0)
@@ -457,14 +490,8 @@ def process_video_manual(input_path, output_path, points, progress_callback=None
 
     # Render
     cap2 = cv2.VideoCapture(input_path)
-    fourcc = cv2.VideoWriter_fourcc(*"avc1")
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    if not out.isOpened():
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-    if not out.isOpened():
-        cap2.release()
-        raise RuntimeError("Could not open VideoWriter for output")
+    tmp_path = output_path + ".tmp.mp4"
+    out = _open_writer(tmp_path, fps, width, height)
 
     frame_idx = 0
     while True:
@@ -480,6 +507,7 @@ def process_video_manual(input_path, output_path, points, progress_callback=None
 
     cap2.release()
     out.release()
+    _finalize_video(tmp_path, output_path)
     if progress_callback:
         progress_callback(1.0)
 
