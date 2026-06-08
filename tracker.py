@@ -56,7 +56,7 @@ def detect_ball_in_frame(frame, bg_sub, history):
 
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area < 5 or area > 2000:
+        if area < 5 or area > 800:
             continue
 
         perimeter = cv2.arcLength(cnt, True)
@@ -64,7 +64,7 @@ def detect_ball_in_frame(frame, bg_sub, history):
             continue
 
         circularity = (4 * math.pi * area) / (perimeter * perimeter)
-        if circularity < 0.3:
+        if circularity < 0.55:
             continue
 
         M = cv2.moments(cnt)
@@ -154,7 +154,50 @@ def smooth_trajectory(positions):
         if dist > 150:
             result[i] = None
 
-    return result
+    # Pass 2: remove isolated detections with no neighbours within 8 frames
+    result2 = list(result)
+    for i in range(n):
+        if result[i] is None:
+            continue
+        has_neighbour = any(
+            result[j] is not None
+            for j in range(max(0, i - 8), min(n, i + 9))
+            if j != i
+        )
+        if not has_neighbour:
+            result2[i] = None
+
+    return result2
+
+
+def filter_by_parabola(positions):
+    """Remove positions that don't fit a parabolic ball-flight path."""
+    pts = [(i, pos) for i, pos in enumerate(positions) if pos is not None]
+    if len(pts) < 8:
+        return positions
+
+    indices = np.array([p[0] for p in pts], dtype=float)
+    xs = np.array([p[1][0] for p in pts], dtype=float)
+    ys = np.array([p[1][1] for p in pts], dtype=float)
+
+    try:
+        poly_y = np.polyfit(indices, ys, 2)
+        poly_x = np.polyfit(indices, xs, 1)
+
+        y_range = max(ys) - min(ys)
+        threshold = max(60, y_range * 0.25)
+
+        result = list(positions)
+        for i, pos in enumerate(positions):
+            if pos is None:
+                continue
+            pred_x = np.polyval(poly_x, i)
+            pred_y = np.polyval(poly_y, i)
+            if math.hypot(pos[0] - pred_x, pos[1] - pred_y) > threshold:
+                result[i] = None
+        return result
+    except Exception:
+        return positions
 
 
 def draw_trajectory_on_frame(frame, trajectory, current_idx):
@@ -186,34 +229,20 @@ def draw_trajectory_on_frame(frame, trajectory, current_idx):
         rel_i = valid_points[i][0]
         t = rel_i / max(len(window) - 1, 1)  # 0=oldest, 1=newest
 
-        # Color gradient: blue (old) -> yellow -> red (new)
-        if t < 0.5:
-            # Blue to yellow
-            tt = t * 2
-            b = int(255 * (1 - tt))
-            g = int(255 * tt)
-            r = int(255 * tt)
-        else:
-            # Yellow to red
-            tt = (t - 0.5) * 2
-            b = 0
-            g = int(255 * (1 - tt))
-            r = 255
-
-        color = (b, g, r)
+        # Dark red gradient: older=dark red, newer=bright red
+        r = int(80 + 120 * t)   # 80 → 200
+        color = (0, 0, r)
         pt1 = valid_points[i - 1][1]
         pt2 = valid_points[i][1]
         cv2.line(frame, pt1, pt2, color, 3, cv2.LINE_AA)
 
-    # Draw current ball position with glow effect
+    # Draw current ball position with dark red glow
     if current_idx < len(trajectory) and trajectory[current_idx] is not None:
         cx, cy = trajectory[current_idx]
-        # Outer glow
-        cv2.circle(frame, (cx, cy), 12, (0, 200, 255), 2, cv2.LINE_AA)
-        cv2.circle(frame, (cx, cy), 9, (0, 150, 200), 2, cv2.LINE_AA)
-        # Inner bright circle
-        cv2.circle(frame, (cx, cy), 6, (0, 255, 255), -1, cv2.LINE_AA)
-        cv2.circle(frame, (cx, cy), 3, (255, 255, 255), -1, cv2.LINE_AA)
+        cv2.circle(frame, (cx, cy), 12, (0, 0, 180), 2, cv2.LINE_AA)
+        cv2.circle(frame, (cx, cy), 9,  (0, 0, 140), 2, cv2.LINE_AA)
+        cv2.circle(frame, (cx, cy), 6,  (0, 0, 200), -1, cv2.LINE_AA)
+        cv2.circle(frame, (cx, cy), 3,  (200, 200, 255), -1, cv2.LINE_AA)
 
     # Label detected frames count
     detected = sum(1 for p in trajectory[: current_idx + 1] if p is not None)
@@ -278,7 +307,7 @@ def process_video(input_path, output_path, progress_callback=None):
 
     # Background subtractor
     bg_sub = cv2.createBackgroundSubtractorMOG2(
-        history=200, varThreshold=40, detectShadows=False
+        history=300, varThreshold=60, detectShadows=False
     )
 
     # -----------------------------------------------------------------------
@@ -311,6 +340,7 @@ def process_video(input_path, output_path, progress_callback=None):
 
     # Smooth the trajectory
     positions = smooth_trajectory(positions)
+    positions = filter_by_parabola(positions)
 
     # Upscale positions back to original resolution
     if scale != 1.0:

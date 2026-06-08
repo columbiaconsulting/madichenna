@@ -72,18 +72,20 @@
         <!-- Result State -->
         <section id="state-result" class="state-section">
             <div class="result-card">
-                <h2 class="result-title">Shot Traced!</h2>
+                <div class="result-banner">&#10003; Tracing Complete</div>
                 <video
                     id="result-video"
                     class="video-player"
                     controls
                     autoplay
+                    muted
                     playsinline
                     loop
-                    preload="metadata"
+                    preload="auto"
                 >
                     Your browser does not support HTML5 video.
                 </video>
+                <p class="video-error" id="video-error"></p>
                 <div class="stats-grid" id="stats-grid">
                     <!-- Populated by JS -->
                 </div>

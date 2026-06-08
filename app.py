@@ -171,7 +171,24 @@ def result(job_id):
     return send_file(
         output_path,
         mimetype="video/mp4",
-        as_attachment=False,
+        conditional=True,
+    )
+
+
+@app.route("/download/<job_id>")
+def download(job_id):
+    if job_id not in jobs:
+        return jsonify({"error": "Unknown job"}), 404
+    job = jobs[job_id]
+    if job["status"] != "done":
+        return jsonify({"error": "Job not complete"}), 400
+    output_path = job["output_path"]
+    if not os.path.exists(output_path):
+        return jsonify({"error": "Output file not found"}), 404
+    return send_file(
+        output_path,
+        mimetype="video/mp4",
+        as_attachment=True,
         download_name=f"golf_traced_{job_id[:8]}.mp4",
     )
 

@@ -242,14 +242,18 @@
         });
       }
 
-      // Wire download button
+      // Wire download button to dedicated download route
       downloadBtn.onclick = function () {
-        var a = document.createElement("a");
-        a.href = "/result/" + jobId;
-        a.download = "golf_traced_" + jobId.slice(0, 8) + ".mp4";
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        window.location.href = "/download/" + jobId;
+      };
+
+      // Video error feedback
+      var videoErrorEl = document.getElementById("video-error");
+      resultVideo.onerror = function () {
+        if (videoErrorEl) videoErrorEl.textContent = "Video could not be played in browser — use the Download button to watch it.";
+      };
+      resultVideo.oncanplay = function () {
+        if (videoErrorEl) videoErrorEl.textContent = "";
       };
 
       showState("result");
@@ -399,12 +403,12 @@
       // glow
       ctx.beginPath();
       ctx.arc(px, py, 10, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(0,255,200,0.2)";
+      ctx.fillStyle = "rgba(180,0,0,0.25)";
       ctx.fill();
       // dot
       ctx.beginPath();
       ctx.arc(px, py, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#00ffc8";
+      ctx.fillStyle = "#c00000";
       ctx.fill();
       ctx.strokeStyle = "#fff";
       ctx.lineWidth = 1.5;
@@ -419,7 +423,7 @@
     // draw lines between points
     if (manualPoints.length > 1) {
       ctx.beginPath();
-      ctx.strokeStyle = "rgba(0,255,200,0.5)";
+      ctx.strokeStyle = "rgba(180,0,0,0.5)";
       ctx.lineWidth = 2;
       manualPoints.forEach(function (pt, i) {
         var px = pt.x * manualCanvas.width;

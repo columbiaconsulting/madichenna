@@ -314,6 +314,28 @@ body {
     color: var(--accent);
 }
 
+.result-banner {
+    background: linear-gradient(135deg, #1a472a, #2d6a4f);
+    border: 1px solid var(--accent);
+    border-radius: 100px;
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    letter-spacing: 0.3px;
+}
+
+.video-error {
+    font-size: 0.8rem;
+    color: #ff7675;
+    text-align: center;
+    margin-top: -12px;
+    margin-bottom: 10px;
+    min-height: 1em;
+}
+
 /* ---- Video Player ----------------------------------------- */
 .video-player {
     width: 100%;
