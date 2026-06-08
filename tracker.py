@@ -392,16 +392,22 @@ def process_video_manual(input_path, output_path, points, progress_callback=None
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
 
-    # Convert normalised time-based points to pixel frame positions
+    if len(points) < 2:
+        raise ValueError("At least 2 manual points are required")
+
+    # Convert normalised time-based points to pixel frame positions.
+    # Sort by time first so ordering is stable.
+    sorted_pts = sorted(points, key=lambda p: float(p["time"]))
     keyframes = {}
-    for pt in points:
+    for pt in sorted_pts:
         fidx = int(round(float(pt["time"]) * fps))
         fidx = max(0, min(fidx, total_frames - 1))
+        # If this frame index is already taken, nudge forward by 1 until free
+        while fidx in keyframes and fidx < total_frames - 1:
+            fidx += 1
         keyframes[fidx] = (int(float(pt["x"]) * width), int(float(pt["y"]) * height))
 
     sorted_keys = sorted(keyframes)
-    if len(sorted_keys) < 2:
-        raise ValueError("At least 2 manual points are required")
 
     # Build full positions list by linear interpolation between keyframes
     positions = [None] * total_frames
