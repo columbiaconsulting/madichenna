@@ -376,3 +376,101 @@ body {
         padding: 40px 36px;
     }
 }
+
+/* ---- Mode Selector ---------------------------------------- */
+.mode-selector {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.mode-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border-radius: 100px;
+    border: 2px solid var(--card-border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(82, 183, 136, 0.1);
+}
+
+/* ---- Manual Editor ---------------------------------------- */
+.manual-editor-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    padding: 20px 16px;
+    box-shadow: var(--shadow);
+}
+
+.manual-instructions {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
+
+.video-canvas-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+}
+
+.manual-video {
+    width: 100%;
+    display: block;
+}
+
+.manual-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.manual-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.point-count {
+    font-size: 0.875rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.btn-icon {
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}

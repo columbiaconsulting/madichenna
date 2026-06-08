@@ -10,7 +10,7 @@
   /*  State management                                                    */
   /* ------------------------------------------------------------------ */
 
-  const STATES = ["upload", "processing", "result"];
+  const STATES = ["upload", "processing", "result", "manual"];
   let currentJobId = null;
   let pollTimer = null;
 
@@ -44,6 +44,33 @@
   var statsGrid        = document.getElementById("stats-grid");
   var downloadBtn      = document.getElementById("download-btn");
   var retryBtn         = document.getElementById("retry-btn");
+
+  var modeAutoBtn      = document.getElementById("mode-auto-btn");
+  var modeManualBtn    = document.getElementById("mode-manual-btn");
+  var manualVideo      = document.getElementById("manual-video");
+  var manualCanvas     = document.getElementById("manual-canvas");
+  var pointCountEl     = document.getElementById("point-count");
+  var undoBtn          = document.getElementById("undo-btn");
+  var applyManualBtn   = document.getElementById("apply-manual-btn");
+  var cancelManualBtn  = document.getElementById("cancel-manual-btn");
+
+  /* ------------------------------------------------------------------ */
+  /*  Mode selection                                                      */
+  /* ------------------------------------------------------------------ */
+
+  var traceMode = "auto";
+
+  modeAutoBtn.addEventListener("click", function () {
+    traceMode = "auto";
+    modeAutoBtn.classList.add("active");
+    modeManualBtn.classList.remove("active");
+  });
+
+  modeManualBtn.addEventListener("click", function () {
+    traceMode = "manual";
+    modeManualBtn.classList.add("active");
+    modeAutoBtn.classList.remove("active");
+  });
 
   /* ------------------------------------------------------------------ */
   /*  Upload state: file selection                                        */
@@ -81,6 +108,11 @@
     var file = videoInput.files && videoInput.files[0];
     if (!file) {
       uploadError.textContent = "No file selected.";
+      return;
+    }
+
+    if (traceMode === "manual") {
+      openManualEditor(file);
       return;
     }
 
@@ -268,6 +300,150 @@
     currentJobId = null;
     stopPolling();
 
+    showState("upload");
+  });
+
+  /* ------------------------------------------------------------------ */
+  /*  Manual editor                                                       */
+  /* ------------------------------------------------------------------ */
+
+  var manualPoints = [];
+  var manualObjectUrl = null;
+
+  function openManualEditor(file) {
+    manualPoints = [];
+    if (manualObjectUrl) URL.revokeObjectURL(manualObjectUrl);
+    manualObjectUrl = URL.createObjectURL(file);
+    manualVideo.src = manualObjectUrl;
+    manualVideo.load();
+    updatePointUI();
+    showState("manual");
+
+    manualVideo.addEventListener("loadedmetadata", syncCanvasSize, { once: true });
+  }
+
+  function syncCanvasSize() {
+    manualCanvas.width = manualVideo.videoWidth;
+    manualCanvas.height = manualVideo.videoHeight;
+    redrawPoints();
+  }
+
+  function getCanvasPoint(e) {
+    var rect = manualCanvas.getBoundingClientRect();
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+      x: (clientX - rect.left) / rect.width,
+      y: (clientY - rect.top) / rect.height,
+      time: manualVideo.currentTime,
+    };
+  }
+
+  manualCanvas.addEventListener("click", function (e) {
+    e.preventDefault();
+    var pt = getCanvasPoint(e);
+    manualPoints.push(pt);
+    updatePointUI();
+    redrawPoints();
+  });
+
+  manualCanvas.addEventListener("touchend", function (e) {
+    e.preventDefault();
+    var touch = e.changedTouches[0];
+    var rect = manualCanvas.getBoundingClientRect();
+    manualPoints.push({
+      x: (touch.clientX - rect.left) / rect.width,
+      y: (touch.clientY - rect.top) / rect.height,
+      time: manualVideo.currentTime,
+    });
+    updatePointUI();
+    redrawPoints();
+  });
+
+  undoBtn.addEventListener("click", function () {
+    manualPoints.pop();
+    updatePointUI();
+    redrawPoints();
+  });
+
+  function updatePointUI() {
+    var n = manualPoints.length;
+    pointCountEl.textContent = n + (n === 1 ? " point marked" : " points marked");
+    applyManualBtn.disabled = n < 2;
+  }
+
+  function redrawPoints() {
+    var ctx = manualCanvas.getContext("2d");
+    ctx.clearRect(0, 0, manualCanvas.width, manualCanvas.height);
+    manualPoints.forEach(function (pt, i) {
+      var px = pt.x * manualCanvas.width;
+      var py = pt.y * manualCanvas.height;
+      // glow
+      ctx.beginPath();
+      ctx.arc(px, py, 10, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,255,200,0.2)";
+      ctx.fill();
+      // dot
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "#00ffc8";
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      // number
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(i + 1, px, py);
+    });
+    // draw lines between points
+    if (manualPoints.length > 1) {
+      ctx.beginPath();
+      ctx.strokeStyle = "rgba(0,255,200,0.5)";
+      ctx.lineWidth = 2;
+      manualPoints.forEach(function (pt, i) {
+        var px = pt.x * manualCanvas.width;
+        var py = pt.y * manualCanvas.height;
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+  }
+
+  applyManualBtn.addEventListener("click", function () {
+    var file = videoInput.files && videoInput.files[0];
+    if (!file || manualPoints.length < 2) return;
+
+    showState("processing");
+    setProgress(0, "Uploading video…");
+
+    var formData = new FormData();
+    formData.append("video", file);
+    formData.append("mode", "manual");
+    formData.append("points", JSON.stringify(manualPoints));
+
+    fetch("/upload", { method: "POST", body: formData })
+      .then(function (res) {
+        if (!res.ok) return res.json().then(function (b) { throw new Error(b.error || "Upload failed"); });
+        return res.json();
+      })
+      .then(function (data) {
+        currentJobId = data.job_id;
+        setProgress(0, "Processing manual trace…");
+        startPolling(currentJobId);
+      })
+      .catch(function (err) {
+        showUploadError(err.message || "Upload failed. Please try again.");
+      });
+  });
+
+  cancelManualBtn.addEventListener("click", function () {
+    manualVideo.pause();
+    manualVideo.removeAttribute("src");
+    manualPoints = [];
+    if (manualObjectUrl) { URL.revokeObjectURL(manualObjectUrl); manualObjectUrl = null; }
     showState("upload");
   });
 

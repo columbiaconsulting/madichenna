@@ -375,3 +375,81 @@ def process_video(input_path, output_path, progress_callback=None):
         "fps": round(fps, 2),
         "duration_seconds": round(duration_seconds, 2),
     }
+
+
+def process_video_manual(input_path, output_path, points, progress_callback=None):
+    """
+    Render trajectory from manually specified positions.
+    points: list of dicts with keys time (seconds, float), x (0-1), y (0-1)
+    """
+    cap = cv2.VideoCapture(input_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Cannot open video: {input_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    cap.release()
+
+    # Convert normalised time-based points to pixel frame positions
+    keyframes = {}
+    for pt in points:
+        fidx = int(round(float(pt["time"]) * fps))
+        fidx = max(0, min(fidx, total_frames - 1))
+        keyframes[fidx] = (int(float(pt["x"]) * width), int(float(pt["y"]) * height))
+
+    sorted_keys = sorted(keyframes)
+    if len(sorted_keys) < 2:
+        raise ValueError("At least 2 manual points are required")
+
+    # Build full positions list by linear interpolation between keyframes
+    positions = [None] * total_frames
+    for i in range(len(sorted_keys) - 1):
+        f1, f2 = sorted_keys[i], sorted_keys[i + 1]
+        p1, p2 = keyframes[f1], keyframes[f2]
+        span = max(f2 - f1, 1)
+        for f in range(f1, f2 + 1):
+            t = (f - f1) / span
+            positions[f] = (int(p1[0] + (p2[0] - p1[0]) * t),
+                            int(p1[1] + (p2[1] - p1[1]) * t))
+
+    # Also fill in the last keyframe
+    positions[sorted_keys[-1]] = keyframes[sorted_keys[-1]]
+
+    detected = sum(1 for p in positions if p is not None)
+
+    # Render
+    cap2 = cv2.VideoCapture(input_path)
+    fourcc = cv2.VideoWriter_fourcc(*"avc1")
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    if not out.isOpened():
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    if not out.isOpened():
+        cap2.release()
+        raise RuntimeError("Could not open VideoWriter for output")
+
+    frame_idx = 0
+    while True:
+        ret, frame = cap2.read()
+        if not ret:
+            break
+        if frame_idx < len(positions):
+            draw_trajectory_on_frame(frame, positions, frame_idx)
+        out.write(frame)
+        frame_idx += 1
+        if progress_callback and frame_idx % 10 == 0:
+            progress_callback(frame_idx / max(total_frames, 1))
+
+    cap2.release()
+    out.release()
+    if progress_callback:
+        progress_callback(1.0)
+
+    return {
+        "total_frames": total_frames,
+        "detected_frames": detected,
+        "fps": round(fps, 2),
+        "duration_seconds": round(total_frames / fps, 2),
+    }

@@ -6,9 +6,10 @@ import os
 import uuid
 import threading
 import traceback
+import json
 
 from flask import Flask, request, jsonify, render_template, send_file
-from tracker import process_video
+from tracker import process_video, process_video_manual
 
 app = Flask(__name__)
 
@@ -54,6 +55,33 @@ def run_processing(job_id, input_path, output_path):
                 pass
 
 
+def run_manual_processing(job_id, input_path, output_path, points):
+    """Background thread: run manual trace and update job status."""
+    try:
+        jobs[job_id]["status"] = "processing"
+
+        def progress_callback(p):
+            jobs[job_id]["progress"] = round(p * 100, 1)
+
+        stats = process_video_manual(input_path, output_path, points, progress_callback=progress_callback)
+
+        jobs[job_id]["status"] = "done"
+        jobs[job_id]["progress"] = 100.0
+        jobs[job_id]["stats"] = stats
+
+    except Exception as exc:
+        jobs[job_id]["status"] = "error"
+        jobs[job_id]["error"] = str(exc)
+        traceback.print_exc()
+
+    finally:
+        if os.path.exists(input_path):
+            try:
+                os.remove(input_path)
+            except OSError:
+                pass
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -86,12 +114,25 @@ def upload():
         "output_path": output_path,
     }
 
-    # Spawn background processing thread
-    thread = threading.Thread(
-        target=run_processing,
-        args=(job_id, input_path, output_path),
-        daemon=True,
-    )
+    mode = request.form.get("mode", "auto")
+    points_raw = request.form.get("points", None)
+
+    if mode == "manual" and points_raw:
+        try:
+            manual_points = json.loads(points_raw)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Invalid points data"}), 400
+        thread = threading.Thread(
+            target=run_manual_processing,
+            args=(job_id, input_path, output_path, manual_points),
+            daemon=True,
+        )
+    else:
+        thread = threading.Thread(
+            target=run_processing,
+            args=(job_id, input_path, output_path),
+            daemon=True,
+        )
     thread.start()
 
     return jsonify({"job_id": job_id})

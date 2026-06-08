@@ -26,10 +26,31 @@
                 <p class="upload-filename" id="upload-filename"></p>
                 <input type="file" id="video-input" accept="video/*" aria-label="Select golf video">
             </div>
+            <div class="mode-selector">
+                <button class="mode-btn active" id="mode-auto-btn" type="button">Auto Trace</button>
+                <button class="mode-btn" id="mode-manual-btn" type="button">Manual Trace</button>
+            </div>
             <button class="btn btn-primary" id="process-btn" disabled>
                 Trace Ball Flight
             </button>
             <p class="error-message" id="upload-error"></p>
+        </section>
+
+        <!-- Manual Editor State -->
+        <section id="state-manual" class="state-section">
+            <div class="manual-editor-card">
+                <p class="manual-instructions">Pause the video and tap the ball to mark its position. Mark at least 2 points along the flight.</p>
+                <div class="video-canvas-wrapper">
+                    <video id="manual-video" class="manual-video" playsinline preload="metadata" controls></video>
+                    <canvas id="manual-canvas" class="manual-canvas"></canvas>
+                </div>
+                <div class="manual-controls">
+                    <span class="point-count" id="point-count">0 points marked</span>
+                    <button class="btn-icon" id="undo-btn" type="button" title="Undo last point">&#8630; Undo</button>
+                </div>
+                <button class="btn btn-primary" id="apply-manual-btn" disabled>Apply Trace</button>
+                <button class="btn btn-secondary" id="cancel-manual-btn" type="button">Cancel</button>
+            </div>
         </section>
 
         <!-- Processing State -->
