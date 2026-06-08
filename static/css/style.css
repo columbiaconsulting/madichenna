@@ -441,8 +441,52 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    cursor: default;
+    pointer-events: none;
+    touch-action: auto;
+}
+
+.video-canvas-wrapper.marking-active .manual-canvas {
+    pointer-events: all;
     cursor: crosshair;
     touch-action: none;
+}
+
+.video-canvas-wrapper.marking-active {
+    box-shadow: 0 0 0 2px var(--accent);
+}
+
+/* ---- Mark Point Button ------------------------------------ */
+.btn-mark {
+    display: block;
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 100px;
+    border: 2px solid var(--accent);
+    background: rgba(82, 183, 136, 0.1);
+    color: var(--accent);
+    font-family: var(--font);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+}
+
+.btn-mark:hover {
+    background: rgba(82, 183, 136, 0.2);
+}
+
+.btn-mark.active {
+    border-color: #00ffc8;
+    color: #00ffc8;
+    background: rgba(0, 255, 200, 0.12);
+    animation: pulse-mark 1s ease-in-out infinite;
+}
+
+@keyframes pulse-mark {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 200, 0.4); }
+    50%       { box-shadow: 0 0 0 8px rgba(0, 255, 200, 0); }
 }
 
 .manual-controls {

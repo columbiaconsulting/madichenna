@@ -39,11 +39,12 @@
         <!-- Manual Editor State -->
         <section id="state-manual" class="state-section">
             <div class="manual-editor-card">
-                <p class="manual-instructions">Pause the video and tap the ball to mark its position. Mark at least 2 points along the flight.</p>
-                <div class="video-canvas-wrapper">
+                <p class="manual-instructions">Play/pause the video normally. When the ball is where you want to mark it, tap <strong>Mark Point</strong> then tap the ball on the video.</p>
+                <div class="video-canvas-wrapper" id="video-canvas-wrapper">
                     <video id="manual-video" class="manual-video" playsinline preload="metadata" controls></video>
                     <canvas id="manual-canvas" class="manual-canvas"></canvas>
                 </div>
+                <button class="btn btn-mark" id="mark-point-btn" type="button">&#x1F4CD; Mark Ball Position</button>
                 <div class="manual-controls">
                     <span class="point-count" id="point-count">0 points marked</span>
                     <button class="btn-icon" id="undo-btn" type="button" title="Undo last point">&#8630; Undo</button>

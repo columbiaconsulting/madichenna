@@ -309,6 +309,8 @@
 
   var manualPoints = [];
   var manualObjectUrl = null;
+  var videoCanvasWrapper = document.getElementById("video-canvas-wrapper");
+  var markPointBtn = document.getElementById("mark-point-btn");
 
   function openManualEditor(file) {
     manualPoints = [];
@@ -317,6 +319,7 @@
     manualVideo.src = manualObjectUrl;
     manualVideo.load();
     updatePointUI();
+    exitMarkingMode();
     showState("manual");
 
     manualVideo.addEventListener("loadedmetadata", syncCanvasSize, { once: true });
@@ -328,36 +331,51 @@
     redrawPoints();
   }
 
-  function getCanvasPoint(e) {
-    var rect = manualCanvas.getBoundingClientRect();
-    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return {
-      x: (clientX - rect.left) / rect.width,
-      y: (clientY - rect.top) / rect.height,
-      time: manualVideo.currentTime,
-    };
+  function enterMarkingMode() {
+    manualVideo.pause();
+    videoCanvasWrapper.classList.add("marking-active");
+    markPointBtn.classList.add("active");
+    markPointBtn.textContent = "Tap the ball on the video…";
+  }
+
+  function exitMarkingMode() {
+    videoCanvasWrapper.classList.remove("marking-active");
+    markPointBtn.classList.remove("active");
+    markPointBtn.textContent = "📍 Mark Ball Position";
+  }
+
+  markPointBtn.addEventListener("click", function () {
+    if (videoCanvasWrapper.classList.contains("marking-active")) {
+      exitMarkingMode();
+    } else {
+      enterMarkingMode();
+    }
+  });
+
+  function recordPoint(x, y) {
+    manualPoints.push({ x: x, y: y, time: manualVideo.currentTime });
+    exitMarkingMode();
+    updatePointUI();
+    redrawPoints();
   }
 
   manualCanvas.addEventListener("click", function (e) {
     e.preventDefault();
-    var pt = getCanvasPoint(e);
-    manualPoints.push(pt);
-    updatePointUI();
-    redrawPoints();
+    var rect = manualCanvas.getBoundingClientRect();
+    recordPoint(
+      (e.clientX - rect.left) / rect.width,
+      (e.clientY - rect.top) / rect.height
+    );
   });
 
   manualCanvas.addEventListener("touchend", function (e) {
     e.preventDefault();
     var touch = e.changedTouches[0];
     var rect = manualCanvas.getBoundingClientRect();
-    manualPoints.push({
-      x: (touch.clientX - rect.left) / rect.width,
-      y: (touch.clientY - rect.top) / rect.height,
-      time: manualVideo.currentTime,
-    });
-    updatePointUI();
-    redrawPoints();
+    recordPoint(
+      (touch.clientX - rect.left) / rect.width,
+      (touch.clientY - rect.top) / rect.height
+    );
   });
 
   undoBtn.addEventListener("click", function () {
@@ -443,6 +461,7 @@
     manualVideo.pause();
     manualVideo.removeAttribute("src");
     manualPoints = [];
+    exitMarkingMode();
     if (manualObjectUrl) { URL.revokeObjectURL(manualObjectUrl); manualObjectUrl = null; }
     showState("upload");
   });
