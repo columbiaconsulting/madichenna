@@ -20,12 +20,24 @@ def _open_writer(path, fps, width, height):
     return writer
 
 
+def _get_ffmpeg():
+    """Return path to ffmpeg: system install first, then imageio's bundled binary."""
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg:
+        return ffmpeg
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        return None
+
+
 def _finalize_video(tmp_path, final_path):
     """
-    Re-encode tmp_path to H.264 at final_path using ffmpeg when available
-    (gives better browser compatibility). Falls back to the mp4v file directly.
+    Re-encode to H.264 (browser-compatible) using ffmpeg or imageio's bundled binary.
+    Falls back to the raw mp4v file if neither is available.
     """
-    ffmpeg = shutil.which("ffmpeg")
+    ffmpeg = _get_ffmpeg()
     if ffmpeg:
         try:
             r = subprocess.run(
@@ -43,7 +55,7 @@ def _finalize_video(tmp_path, final_path):
                 return
         except Exception:
             pass
-    # ffmpeg not available or failed — use the mp4v file as-is
+    # Last resort: use the mp4v file as-is
     os.replace(tmp_path, final_path)
 
 
